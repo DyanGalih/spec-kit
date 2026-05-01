@@ -2,6 +2,13 @@
 
 <!-- insert new changelog below this comment -->
 
+## [Unreleased]
+
+### Changed
+
+- Update Memory MD extension to v0.6.9 in community catalog (#2)
+- Update Security Review extension to v1.3.3 in community catalog (#2)
+
 ## [0.8.3] - 2026-04-29
 
 ### Changed
