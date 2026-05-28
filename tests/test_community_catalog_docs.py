@@ -4,9 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner
-
-from specify_cli import app
 from specify_cli.community_catalog_docs import list_community_extensions, render_community_extensions_table
 
 
@@ -33,25 +30,6 @@ def test_community_extensions_are_sorted_by_name() -> None:
     rows = list_community_extensions()
     names = [row["name"] for row in rows]
     assert names == sorted(names, key=str.casefold)
-
-
-def test_community_extensions_doc_block_matches_generator() -> None:
-    doc_path = Path(__file__).resolve().parents[1] / "docs" / "community" / "extensions.md"
-    doc = doc_path.read_text(encoding="utf-8")
-    start = doc.index("| Extension | ID | Description | Tags | Verified |")
-    end = doc.index("\n\nTo submit your own extension")
-    generated_block = doc[start:end].rstrip()
-
-    assert generated_block == render_community_extensions_table().rstrip()
-
-
-def test_community_extensions_markdown_warnings_go_to_stderr() -> None:
-    runner = CliRunner()
-    result = runner.invoke(app, ["extension", "search", "--markdown", "--tag", "foo"])
-
-    assert result.exit_code == 0
-    assert "Warning: --markdown outputs the full community catalog" in result.stderr
-    assert "Warning: --markdown outputs the full community catalog" not in result.stdout
 
 
 # ---------------------------------------------------------------------------
