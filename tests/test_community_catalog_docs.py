@@ -83,6 +83,41 @@ def test_extension_without_repository(tmp_path: Path) -> None:
     assert "[Foo](" not in table  # plain name, no link
 
 
+def test_backticks_in_ids_and_tags_render_safely(tmp_path: Path) -> None:
+    f = _write_catalog(tmp_path, {
+        "foo": {
+            "name": "Foo",
+            "id": "foo`bar",
+            "description": "",
+            "tags": ["a`b"],
+            "verified": False,
+            "repository": "",
+        },
+    })
+    table = render_community_extensions_table(path=f)
+    assert "``foo`bar``" in table
+    assert "``a`b``" in table
+    foo_row = next(line for line in table.split("\n") if line.startswith("| ") and "Foo" in line)
+    assert foo_row.count("|") == 6
+
+
+def test_repository_values_are_sanitized_for_table_cells(tmp_path: Path) -> None:
+    f = _write_catalog(tmp_path, {
+        "foo": {
+            "name": "Foo",
+            "id": "foo",
+            "description": "",
+            "tags": [],
+            "verified": False,
+            "repository": "https://example.com/a|b\nnext",
+        },
+    })
+    table = render_community_extensions_table(path=f)
+    assert "https://example.com/a%7Cbnext" in table
+    foo_row = next(line for line in table.split("\n") if line.startswith("| ") and "Foo" in line)
+    assert foo_row.count("|") == 6
+
+
 def test_tags_containing_pipe_do_not_break_table(tmp_path: Path) -> None:
     f = _write_catalog(tmp_path, {
         # No "id" field — exercises ext_id fallback; tag has pipe — exercises stripping

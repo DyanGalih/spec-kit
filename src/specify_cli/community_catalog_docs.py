@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -15,12 +16,23 @@ def _render_cell(value: str) -> str:
     return value.replace("\r\n", " ").replace("\r", " ").replace("\n", " ").replace("|", "\\|")
 
 
+def _format_inline_code(value: str) -> str:
+    text = _render_cell(value)
+    runs = [len(match) for match in re.findall(r"`+", text)]
+    fence = "`" * (max(runs, default=0) + 1)
+    return f"{fence}{text}{fence}"
+
+
+def _sanitize_link_target(value: str) -> str:
+    return value.replace("\r\n", "").replace("\r", "").replace("\n", "").replace("|", "%7C")
+
+
 def _format_tags(tags: Any) -> str:
     if not isinstance(tags, list) or not tags:
         return "—"
     # Clean first, then filter: a tag of "  |  " would pass str(tag).strip() but produce
-    # an empty backtick span after pipe removal, so filter on the cleaned value.
-    cleaned = [f"`{c}`" for tag in tags if (c := str(tag).replace("|", "").strip())]
+    # an empty code span after pipe removal, so filter on the cleaned value.
+    cleaned = [_format_inline_code(c) for tag in tags if (c := str(tag).replace("|", "").strip())]
     return ", ".join(cleaned) if cleaned else "—"
 
 
@@ -67,15 +79,16 @@ def render_community_extensions_table(path: Path = COMMUNITY_CATALOG_PATH) -> st
         # Escape raw field values *before* composing Markdown syntax so that
         # a pipe inside a name or description doesn't break a link target.
         safe_name = _render_cell(row["name"])
+        safe_repository = _sanitize_link_target(row["repository"])
         link = (
-            f"[{safe_name}]({row['repository']})"
-            if row["repository"]
+            f"[{safe_name}]({safe_repository})"
+            if safe_repository
             else safe_name
         )
         table_rows.append(
             [
                 link,
-                f"`{row['id']}`",
+                _format_inline_code(row["id"]),
                 _render_cell(row["description"]),
                 _format_tags(row["tags"]),
                 row["verified"],
