@@ -3216,16 +3216,17 @@ def extension_search(
     """Search for available extensions in catalog."""
     if markdown:
         if query or tag or author or verified:
-            console.print(
-                "[yellow]Warning:[/yellow] --markdown outputs the full community catalog "
-                "and ignores filters (query, --tag, --author, --verified)."
+            typer.echo(
+                "Warning: --markdown outputs the full community catalog and ignores filters "
+                "(query, --tag, --author, --verified).",
+                err=True,
             )
         from .community_catalog_docs import render_community_extensions_table
 
         try:
             typer.echo(render_community_extensions_table())
         except (ValueError, FileNotFoundError) as exc:
-            console.print(f"[red]Error:[/red] {exc}")
+            typer.echo(f"Error: {exc}", err=True)
             raise typer.Exit(1)
         return
 
