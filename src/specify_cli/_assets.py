@@ -104,22 +104,18 @@ def _locate_bundled_preset(preset_id: str) -> Path | None:
 def get_speckit_version() -> str:
     """Get current spec-kit version."""
     try:
-        import tomllib
-
-        pyproject_path = _repo_root() / "pyproject.toml"
-        if pyproject_path.exists():
-            with open(pyproject_path, "rb") as f:
-                data = tomllib.load(f)
-                version = data.get("project", {}).get("version")
-                if version:
-                    return version
-    except Exception:
-        # If the source checkout lookup fails for any reason, fall back to the installed
-        # distribution metadata below.
-        pass
-
-    try:
         return importlib.metadata.version("specify-cli")
     except Exception:
-        pass
+        # Fallback: try reading from pyproject.toml
+        try:
+            import tomllib
+            pyproject_path = _repo_root() / "pyproject.toml"
+            if pyproject_path.exists():
+                with open(pyproject_path, "rb") as f:
+                    data = tomllib.load(f)
+                    return data.get("project", {}).get("version", "unknown")
+        except Exception:
+            # Intentionally ignore any errors while reading/parsing pyproject.toml.
+            # If this lookup fails for any reason, we fall back to returning "unknown" below.
+            pass
     return "unknown"
